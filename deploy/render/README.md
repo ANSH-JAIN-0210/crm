@@ -16,6 +16,8 @@ Use a dedicated project with no existing application data, preferably in Singapo
 
 In Supabase's Connect dialog, choose the **Session pooler** on port **5432** for an IPv4-compatible persistent application connection. Do not use the transaction pooler on port 6543. Use the postgres account because initialization creates schemas, roles, and extensions. Add `sslmode=verify-full` to enforce certificate verification, and URL-encode special characters in the password. Confirm the selected project's PostgreSQL permissions/extensions support Twenty's migrations before applying them.
 
+Also set `sslrootcert=/app/supabase-ca.crt` in the connection URL. The Docker image includes Supabase's public CA certificate, downloaded from the certificate link in the project's Database Settings. This certificate is public trust material, not a credential.
+
 Create a private `crm-files` bucket. Generate server-side S3 credentials and use the S3 endpoint and region shown in the project's Storage settings. Do not use an anon/publishable key as the S3 access key.
 
 Before first deployment, run `deploy/render/prepare-supabase.sql` in this dedicated project's SQL editor. Twenty's initialization explicitly uses `public.unaccent`; if this extension already exists in another schema, relocate it to `public` in the dedicated project first. The preflight deliberately stops instead of moving an existing extension automatically.
