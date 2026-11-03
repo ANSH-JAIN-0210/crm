@@ -36,7 +36,9 @@ COPY ./packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
 RUN NODE_OPTIONS="--max-old-space-size=2048" yarn workspaces focus twenty-monorepo twenty-front twenty-front-component-renderer twenty-ui twenty-shared twenty-sdk twenty-client-sdk && yarn cache clean && npx nx reset
 
 
-FROM front-deps AS server-deps
+FROM node-base AS server-deps
+
+COPY --from=front-deps /app/packages/twenty-front/package.json /tmp/front-deps-complete.json
 
 WORKDIR /app
 
