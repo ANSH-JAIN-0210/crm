@@ -9,6 +9,11 @@ export SERVER_URL="${SERVER_URL:-${RENDER_EXTERNAL_URL:-}}"
 
 cd /app/packages/twenty-server
 
+if [ "${CRM_PROCESS:-web}" = "all" ]; then
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=192}"
+  exec /app/entrypoint.sh node /app/render-run-all.cjs
+fi
+
 if [ "${CRM_PROCESS:-web}" = "worker" ]; then
   export DISABLE_DB_MIGRATIONS=true
   export DISABLE_CRON_JOBS_REGISTRATION=true

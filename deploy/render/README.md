@@ -4,12 +4,11 @@ This Blueprint builds the branded source in this repository. It does not use the
 
 ## Resources
 
-- `crm-web`: web application, free compute initially.
-- `crm-worker`: background processing, smallest paid compute plan (`0.5c-512mb`).
+- `crm-web`: web application and background worker together on free compute.
 - `crm-redis`: private Render Key Value with `noeviction`, free initially.
 - External Supabase PostgreSQL and a private Supabase Storage bucket named `crm-files`.
 
-The free/smallest plans are a starting configuration, not a verified capacity recommendation. The app may require more memory. Render's free web service sleeps and free Key Value does not provide durable queue storage; upgrade these for reliable continuous operation. The worker incurs recurring charges. Review the Dashboard estimate before applying. Both Docker builds need sufficient build memory; the upstream frontend build permits an 8 GB heap.
+This free-only configuration is experimental: the app and worker share 512 MB RAM, which may be insufficient. No paid resources are configured. Render's free web service sleeps and free Key Value does not provide durable queue storage; upgrade these for reliable continuous operation. The Docker build needs sufficient build memory; the upstream frontend build permits an 8 GB heap.
 
 ## Supabase setup
 
@@ -35,15 +34,15 @@ Supply these values in Render's secret input fields, never in Git:
 | `STORAGE_S3_ACCESS_KEY_ID` | Supabase server-side S3 access key |
 | `STORAGE_S3_SECRET_ACCESS_KEY` | Matching S3 secret |
 
-Render generates the app/encryption secrets and shares them with the worker. Keep the encryption key stable and backed up. Uploaded files use the shared S3 bucket rather than container storage.
+Render generates the app/encryption secrets; both processes inherit them. Keep the encryption key stable and backed up. Uploaded files use the shared S3 bucket rather than container storage.
 
-The web process initializes/upgrades the database. The worker waits for the web health endpoint before starting and skips duplicate migrations. The Render-provided web URL becomes `SERVER_URL` automatically. Automatic deployments are off until the first deployment has been verified.
+The startup entrypoint initializes/upgrades the database. A supervisor starts the web process, waits for its local health endpoint, then starts the worker. It forwards shutdown signals and stops both if either exits. The Render-provided web URL becomes `SERVER_URL` automatically. Automatic deployments are off until the first deployment has been verified.
 
 ## Apply and verify
 
 1. Open the [Render Blueprint setup](https://dashboard.render.com/blueprint/new?repo=https://github.com/ANSH-JAIN-0210/crm).
 2. Select the intended workspace, review the compute costs, and provide the inputs above.
-3. Apply the Blueprint; wait for both builds and the web database initialization to finish.
+3. Apply the Blueprint; wait for the build and the web database initialization to finish.
 4. Confirm `/healthz` returns success, create the first account/workspace, and verify a contact can be saved.
 5. Upload a file and verify the worker starts and processes a background job.
 6. Configure SMTP and provider OAuth separately if required. No email-provider or OAuth credentials are included.
