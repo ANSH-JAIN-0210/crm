@@ -89,6 +89,7 @@ COPY ./packages/twenty-sdk /app/packages/twenty-sdk
 COPY ./packages/twenty-client-sdk /app/packages/twenty-client-sdk
 RUN npx nx run twenty-front:lingui:extract && \
     npx nx run twenty-front:lingui:compile
+RUN node -e 'const fs = require("node:fs"); const path = "/app/packages/twenty-front/package.json"; const config = JSON.parse(fs.readFileSync(path, "utf8")); config.scripts.build = config.scripts.build.replace("--max-old-space-size=8192", "--max-old-space-size=4096"); fs.writeFileSync(path, JSON.stringify(config));'
 # To skip the memory-intensive frontend build, pre-build on the host:
 #   npx nx build twenty-front
 # The check below will use packages/twenty-front/build/ if it already exists.
@@ -123,7 +124,7 @@ COPY ./packages/twenty-docker/twenty/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 WORKDIR /app/packages/twenty-server
 
-ARG APP_VERSION
+ARG APP_VERSION=2.56.0
 ENV APP_VERSION=$APP_VERSION
 ENV NODE_ENV=production
 
