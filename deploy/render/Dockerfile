@@ -4,6 +4,11 @@
 
 FROM node:26.12.1-alpine3.23@sha256:bc2b334006f15c7167bbeb2f08f28c2df883f7594a0470e04454ebe7560cfe68 AS node-base
 
+ENV YARN_NETWORK_CONCURRENCY=4 \
+    YARN_TASK_POOL_CONCURRENCY=2 \
+    NX_DAEMON=false \
+    NX_PARALLEL=1
+
 # Node 26 images no longer bundle Yarn; run the release pinned in .yarnrc.yml.
 RUN printf '%s\n' '#!/bin/sh' 'exec node "/app/$(sed -n "s/^yarnPath: //p" /app/.yarnrc.yml)" "$@"' \
       > /usr/local/bin/yarn && \
@@ -28,10 +33,10 @@ COPY ./packages/twenty-front-component-renderer/package.json /app/packages/twent
 COPY ./packages/twenty-sdk/package.json /app/packages/twenty-sdk/
 COPY ./packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
 
-RUN yarn workspaces focus twenty-monorepo twenty-front twenty-front-component-renderer twenty-ui twenty-shared twenty-sdk twenty-client-sdk && yarn cache clean && npx nx reset
+RUN NODE_OPTIONS="--max-old-space-size=2048" yarn workspaces focus twenty-monorepo twenty-front twenty-front-component-renderer twenty-ui twenty-shared twenty-sdk twenty-client-sdk && yarn cache clean && npx nx reset
 
 
-FROM node-base AS server-deps
+FROM front-deps AS server-deps
 
 WORKDIR /app
 
@@ -46,7 +51,7 @@ COPY ./packages/twenty-shared/package.json /app/packages/twenty-shared/
 COPY ./packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
 COPY ./packages/twenty-oxlint-rules/package.json /app/packages/twenty-oxlint-rules/
 
-RUN yarn workspaces focus twenty-monorepo twenty-server twenty-emails twenty-shared twenty-client-sdk && yarn cache clean && npx nx reset
+RUN NODE_OPTIONS="--max-old-space-size=2048" yarn workspaces focus twenty-monorepo twenty-server twenty-emails twenty-shared twenty-client-sdk && yarn cache clean && npx nx reset
 
 
 FROM server-deps AS twenty-server-build
@@ -61,7 +66,7 @@ RUN npx nx run twenty-server:lingui:extract && \
     npx nx run twenty-emails:lingui:extract && \
     npx nx run twenty-emails:lingui:compile
 
-RUN npx nx run twenty-server:build
+RUN NODE_OPTIONS="--max-old-space-size=4096" npx nx run twenty-server:build
 
 # Clean server build output (type declarations and compiled tests are not needed at runtime;
 # source maps are kept because twenty-infra extracts them from the image for Sentry uploads)
@@ -72,6 +77,9 @@ RUN yarn workspaces focus --production twenty-emails twenty-shared twenty-client
 
 
 FROM front-deps AS twenty-front-build
+
+# Keep server and frontend compilation from sharing Render's build-memory limit.
+COPY --from=twenty-server-build /app/packages/twenty-server/package.json /tmp/server-build-complete.json
 
 COPY ./packages/twenty-front /app/packages/twenty-front
 COPY ./packages/twenty-front-component-renderer /app/packages/twenty-front-component-renderer
@@ -87,7 +95,7 @@ RUN npx nx run twenty-front:lingui:extract && \
 RUN if [ -d /app/packages/twenty-front/build ]; then \
       echo "Using pre-built frontend from host"; \
     else \
-      NODE_OPTIONS="--max-old-space-size=8192" npx nx build twenty-front; \
+      NODE_OPTIONS="--max-old-space-size=4096" npx nx build twenty-front; \
     fi
 
 
