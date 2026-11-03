@@ -1,0 +1,128 @@
+services:
+  - type: keyvalue
+    name: crm-redis
+    region: singapore
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: crm-web
+    runtime: docker
+    repo: https://github.com/ANSH-JAIN-0210/crm
+    branch: main
+    region: singapore
+    plan: free
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
+    envVars:
+      - key: CRM_PROCESS
+        value: web
+      - key: NODE_ENV
+        value: production
+      - key: PG_DATABASE_URL
+        sync: false
+      - key: PG_POOL_MAX_CONNECTIONS
+        value: "5"
+      - key: REDIS_URL
+        fromService:
+          name: crm-redis
+          type: keyvalue
+          property: connectionString
+      - key: APP_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: STORAGE_TYPE
+        value: s3
+      - key: STORAGE_S3_NAME
+        value: crm-files
+      - key: STORAGE_S3_REGION
+        sync: false
+      - key: STORAGE_S3_ENDPOINT
+        sync: false
+      - key: STORAGE_S3_ACCESS_KEY_ID
+        sync: false
+      - key: STORAGE_S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: EMAIL_FROM_NAME
+        value: crm
+      - key: IS_BILLING_ENABLED
+        value: "false"
+      - key: IS_MULTIWORKSPACE_ENABLED
+        value: "false"
+
+  - type: worker
+    name: crm-worker
+    runtime: docker
+    repo: https://github.com/ANSH-JAIN-0210/crm
+    branch: main
+    region: singapore
+    plan: 0.5c-512mb
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    envVars:
+      - key: CRM_PROCESS
+        value: worker
+      - key: NODE_ENV
+        value: production
+      - key: SERVER_URL
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: PG_DATABASE_URL
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: PG_DATABASE_URL
+      - key: PG_POOL_MAX_CONNECTIONS
+        value: "5"
+      - key: REDIS_URL
+        fromService:
+          name: crm-redis
+          type: keyvalue
+          property: connectionString
+      - key: APP_SECRET
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: APP_SECRET
+      - key: ENCRYPTION_KEY
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: ENCRYPTION_KEY
+      - key: STORAGE_TYPE
+        value: s3
+      - key: STORAGE_S3_NAME
+        value: crm-files
+      - key: STORAGE_S3_REGION
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: STORAGE_S3_REGION
+      - key: STORAGE_S3_ENDPOINT
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: STORAGE_S3_ENDPOINT
+      - key: STORAGE_S3_ACCESS_KEY_ID
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: STORAGE_S3_ACCESS_KEY_ID
+      - key: STORAGE_S3_SECRET_ACCESS_KEY
+        fromService:
+          name: crm-web
+          type: web
+          envVarKey: STORAGE_S3_SECRET_ACCESS_KEY
+      - key: EMAIL_FROM_NAME
+        value: crm
+      - key: IS_BILLING_ENABLED
+        value: "false"
+      - key: IS_MULTIWORKSPACE_ENABLED
+        value: "false"

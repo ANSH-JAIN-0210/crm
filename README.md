@@ -30,4 +30,6 @@ The sign-in footer does not claim that Twenty's hosted-service terms govern this
 Original copyright and license notices are preserved. The repository contains AGPLv3, MIT, and separately licensed Enterprise files; see [LICENSE](LICENSE) and individual package licenses. Rebranding does not grant an Enterprise license or remove source-availability obligations.
 ## Automation
 
+Render deployment configuration and Supabase setup instructions are available in [deploy/render/README.md](deploy/render/README.md). The Blueprint is in [render.yaml](render.yaml).
+
 Upstream GitHub Actions are archived in .github/upstream-workflows. They are inactive in this personal repository; review and adapt them before enabling CI or publishing.
