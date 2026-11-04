@@ -10,12 +10,14 @@ type FooterProps = {
 export const Footer = ({ i18n }: FooterProps) => (
   <Container style={{ marginTop: '12px' }}>
     <ShadowText>
-      {i18n._('crm — your personal workspace')}
-      <br />
-      <Link
-        href="https://github.com/ANSH-JAIN-0210/crm"
-        value={i18n._('Project repository')}
-      />
+      <>
+        {i18n._('crm — your personal workspace')}
+        <br />
+        <Link
+          href="https://github.com/ANSH-JAIN-0210/crm"
+          value={i18n._('Project repository')}
+        />
+      </>
     </ShadowText>
   </Container>
 );
