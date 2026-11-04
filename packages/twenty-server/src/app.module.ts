@@ -36,6 +36,7 @@ import { ModulesModule } from 'src/modules/modules.module';
 
 import { ClickHouseModule } from './database/clickhouse/clickhouse.module';
 import { CoreEngineModule } from './engine/core-modules/core-engine.module';
+import { QueueWorkerModule } from './queue-worker/queue-worker.module';
 
 // TODO: Remove this middleware when all the rest endpoints are migrated to TwentyORM
 const MIGRATED_REST_METHODS = [
@@ -48,6 +49,7 @@ const MIGRATED_REST_METHODS = [
 
 @Module({
   imports: [
+    ...(process.env.CRM_EMBED_WORKER === 'true' ? [QueueWorkerModule] : []),
     SentryModule.forRoot(),
     GraphQLModule.forRootAsync<YogaDriverConfig>({
       driver: YogaDriver,

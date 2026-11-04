@@ -209,7 +209,6 @@ LABEL org.opencontainers.image.description="Twenty image with backend and fronte
 FROM twenty AS crm-render
 USER root
 COPY --chmod=755 ./deploy/render/start.sh /app/render-start.sh
-COPY ./deploy/render/run-all.cjs /app/render-run-all.cjs
 COPY ./deploy/render/supabase-ca.crt /app/supabase-ca.crt
 USER 1000
 ENTRYPOINT ["/app/render-start.sh"]

@@ -4,7 +4,7 @@ This Blueprint builds the branded source in this repository. It does not use the
 
 ## Resources
 
-- `crm-web`: web application and background worker together on free compute.
+- `crm-web`: web application and embedded queue workers in one Nest application on free compute.
 - `crm-redis`: private Render Key Value with `noeviction`, free initially.
 - External Supabase PostgreSQL and a private Supabase Storage bucket named `crm-files`.
 
@@ -38,7 +38,7 @@ Supply these values in Render's secret input fields, never in Git:
 
 Render generates the app/encryption secrets; both processes inherit them. Keep the encryption key stable and backed up. Uploaded files use the shared S3 bucket rather than container storage.
 
-The startup entrypoint initializes/upgrades the database. A supervisor starts the web process, waits for its local health endpoint, then starts the worker. It forwards shutdown signals and stops both if either exits. The Render-provided web URL becomes `SERVER_URL` automatically. Automatic deployments are off until the first deployment has been verified.
+The startup entrypoint initializes/upgrades the database and recovers incomplete first-time initialization without deleting data. Queue workers are enabled only in the web process with `CRM_EMBED_WORKER=true`, so migration commands do not start workers. Shared Nest modules are loaded once, and the existing graceful shutdown also drains the embedded workers. The Render-provided web URL becomes `SERVER_URL` automatically. Automatic deployments are off until the first deployment has been verified.
 
 ## Apply and verify
 

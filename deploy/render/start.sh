@@ -10,8 +10,13 @@ export SERVER_URL="${SERVER_URL:-${RENDER_EXTERNAL_URL:-}}"
 cd /app/packages/twenty-server
 
 if [ "${CRM_PROCESS:-web}" = "all" ]; then
-  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=192}"
-  exec /app/entrypoint.sh node /app/render-run-all.cjs
+  export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=320 --max-semi-space-size=4 --optimize-for-size}"
+  has_workspace=$(psql "$PG_DATABASE_URL" -tAc "SELECT to_regclass('core.workspace') IS NOT NULL")
+  if [ "$has_workspace" = "f" ]; then
+    node dist/database/scripts/setup-db.js
+    node dist/command/command run-instance-commands --force --include-slow
+  fi
+  exec /app/entrypoint.sh env CRM_EMBED_WORKER=true node dist/main
 fi
 
 if [ "${CRM_PROCESS:-web}" = "worker" ]; then
